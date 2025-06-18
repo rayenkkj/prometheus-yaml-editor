@@ -9,8 +9,8 @@ const fetch = require('node-fetch');
 const app = express();
 
 // Configuration
-const PROM_YML_PATH = 'C:\\Users\\rayen\\Documents\\GitHub\\exporter-restructure-project\\prometheus\\prometheus.yml';
-const PROMETHEUS_URL = 'http://localhost:9090';
+const PROM_YML_PATH = '/app/prometheus.yml';
+const PROMETHEUS_URL = 'http://128.140.76.71:9090';
 const PORT = 3322;
 
 // Middleware
