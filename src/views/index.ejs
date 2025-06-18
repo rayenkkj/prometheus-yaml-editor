@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus YAML Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <style>
+        .CodeMirror {
+            height: 600px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .editor-container {
+            margin: 20px 0;
+        }
+        .button-group {
+            margin: 20px 0;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Prometheus YAML Editor</h1>
+        
+        <div class="editor-container">
+            <textarea id="yamlEditor"><%= yamlContent %></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="saveYaml()">Save Configuration</button>
+            <button class="btn btn-success" onclick="testConfig()">Test Configuration</button>
+            <button class="btn btn-warning" onclick="reloadPrometheus()">Reload Prometheus</button>
+        </div>
+
+        <div id="alertContainer"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js"></script>
+    <script>
+        // Initialize CodeMirror
+        var editor = CodeMirror.fromTextArea(document.getElementById("yamlEditor"), {
+            mode: 'yaml',
+            theme: 'monokai',
+            lineNumbers: true,
+            indentUnit: 2,
+            smartIndent: true,
+            tabSize: 2,
+            lineWrapping: true
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
+
+        function reloadPrometheus() {
+            fetch('/reload', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Prometheus configuration reloaded successfully!', 'success');
+                } else {
+                    showAlert('Error reloading Prometheus: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error reloading Prometheus: ' + error, 'danger');
+            });
+        }
+
+        function saveYaml() {
+            const yamlContent = editor.getValue();
+            fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ yaml: yamlContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Configuration saved successfully!', 'success');
+                    reloadPrometheus();
+                } else {
+                    showAlert('Error saving configuration: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error saving configuration: ' + error, 'danger');
+            });
+        }
+
+        function testConfig() {
+            const yamlContent = editor.getValue();
+            fetch('/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ yaml: yamlContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Configuration is valid!', 'success');
+                } else {
+                    showAlert('Configuration is invalid: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error testing configuration: ' + error, 'danger');
+            });
+        }
+    </script>
+</body>
+</html> 
